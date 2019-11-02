@@ -28,10 +28,14 @@
 
 #include "kam/constants.h"
 #include "kam/asm2bin.h"
+#define _PRIV_KALLSYMS_IMPL_
 #include "kam/kallsyms_config.h"
+#undef _PRIV_KALLSYMS_IMPL_
 #include "ldry/macros/unused.h"
 #include "ldry/kernel/macros/debug.h"
 
+#include <linux/module.h>
+MODULE_LICENSE("GPL v2");
 
 //TODO(lc525) align wrapper functions on boundaries? @see gcc -falign-functions
 
@@ -48,6 +52,7 @@ static void mark_probe_active(kamprobe *probe);
 
 int kamprobes_init(int max_probes)
 {
+  init_priv_kallsyms();
   if (wrapper_start == NULL) {
     wrapper_start = KPRIV(module_alloc)(WRAPPER_SIZE * max_probes);
 
