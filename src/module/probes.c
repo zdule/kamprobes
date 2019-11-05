@@ -313,6 +313,8 @@ int kamprobe_unregister(kamprobe *probe){
   return 0;
 }
 
+EXPORT_SYMBOL(kamprobe_unregister);
+
 void kamprobes_free() {
   vfree(wrapper_start);
 }
