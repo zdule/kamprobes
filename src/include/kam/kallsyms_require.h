@@ -14,6 +14,7 @@
   _(text_mutex)              \
   _(text_poke)               \
   _(module_alloc)            \
+  _(set_memory_x)            \
 
 
 #ifdef _once
@@ -25,6 +26,7 @@ _once void* (*KPRIV(module_alloc))(unsigned long size);
 _once int (*KPRIV(can_probe))(unsigned long paddr);
 _once struct mutex *KPRIV(text_mutex);
 _once void* (*KPRIV(text_poke))(void *addr, const void *opcode, size_t len);
+_once void* (*KPRIV(set_memory_x))(unsigned long addr, int numpages);
 #endif
 
 #endif

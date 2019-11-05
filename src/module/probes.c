@@ -50,11 +50,21 @@ static char *wrapper_end;
 static struct mutex UNUSED(kamprobes_lock);
 static void mark_probe_active(kamprobe *probe);
 
+void *alloc_insn_pages(int num_pages) {
+	printk(KERN_INFO "allocating %d instruction pages\n", num_pages);
+	void *addr = KPRIV(module_alloc)(num_pages*PAGE_SIZE);
+	if (addr == NULL) 
+		return NULL;
+
+	KPRIV(set_memory_x)((unsigned long)addr, num_pages);
+	return addr;
+}
+
 int kamprobes_init(int max_probes)
 {
   init_priv_kallsyms();
   if (wrapper_start == NULL) {
-    wrapper_start = KPRIV(module_alloc)(WRAPPER_SIZE * max_probes);
+    wrapper_start = alloc_insn_pages((WRAPPER_SIZE * max_probes+PAGE_SIZE-1)/PAGE_SIZE);
 
     wrapper_end = wrapper_start;
 
@@ -279,11 +289,11 @@ int kamprobe_register(kamprobe* probe)
   }
   memcpy(text_poke_isns + 1, &addr_ptr, CALL_WIDTH - 1);
 
-  /*get_online_cpus();
-   *mutex_lock(KPRIV(text_mutex));
-   *KPRIV(text_poke)(addr, &text_poke_isns, CALL_WIDTH);
-   *mutex_unlock(KPRIV(text_mutex));
-   *put_online_cpus();*/
+  get_online_cpus();
+  mutex_lock(KPRIV(text_mutex));
+  KPRIV(text_poke)(addr, &text_poke_isns, CALL_WIDTH);
+  mutex_unlock(KPRIV(text_mutex));
+  put_online_cpus();
   return 0;
 }
 EXPORT_SYMBOL(kamprobe_register);
