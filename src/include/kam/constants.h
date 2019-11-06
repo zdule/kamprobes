@@ -17,7 +17,7 @@
 
 #define CALL_WIDTH 5
 #define JMP_WIDTH 5
-#define MOV_WIDTH 9
+#define MOV_NODISP_WIDTH 8
 
 #define WRAPPER_SIZE 46
 #endif

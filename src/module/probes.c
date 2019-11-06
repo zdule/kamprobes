@@ -51,7 +51,6 @@ static struct mutex UNUSED(kamprobes_lock);
 static void mark_probe_active(kamprobe *probe);
 
 void *alloc_insn_pages(int num_pages) {
-	printk(KERN_INFO "allocating %d instruction pages\n", num_pages);
 	void *addr = KPRIV(module_alloc)(num_pages*PAGE_SIZE);
 	if (addr == NULL) 
 		return NULL;
@@ -177,7 +176,7 @@ int kamprobe_register(kamprobe* probe)
   }
   // replace old return address with address just after the jmp into the
   // pre-handler
-  emit_mov_addr_rsp(&wrapper_end, wrapper_end + JMP_WIDTH, 0);
+  emit_mov_addr_rsp(&wrapper_end, wrapper_end + MOV_NODISP_WIDTH + JMP_WIDTH, 0);
 
   // Find the target of the callq in the original instruction stream.
   // We need this so that after calling the pre handler we can then call
@@ -207,12 +206,12 @@ int kamprobe_register(kamprobe* probe)
   // return address to point to the wrapper (the next call to emit_mov_addr_rsp)
   if(probe->on_return != NULL) {
     // test rax, rax
-    // jnz MOV_WIDTH [over emit_mov_addr_rsp]
-    emit_short_cond_jmp(&wrapper_end, jmpnz_cond, sizeof(jmpnz_cond), MOV_WIDTH);
+    // jnz MOV_NODISP_WIDTH [over emit_mov_addr_rsp]
+    emit_short_cond_jmp(&wrapper_end, jmpnz_cond, sizeof(jmpnz_cond), MOV_NODISP_WIDTH);
 
     // Change the top of the stack so it points at the bottom-half of the wrapper,
     // which is the bit that does the calling of the rtn-handler.
-    emit_mov_addr_rsp(&wrapper_end, wrapper_end + JMP_WIDTH + MOV_WIDTH, 0);
+    emit_mov_addr_rsp(&wrapper_end, wrapper_end + JMP_WIDTH + MOV_NODISP_WIDTH, 0);
   }
 
   if (is_call_insn(addr)) { // probe on call instruction (in caller)
