@@ -172,7 +172,20 @@ int kamprobe_register(kamprobe* probe)
     // being saved (7 of them), start saving extra data at the 8th available
     // position. We already know the return address as in the case of type
     // 1 probes (caller), it's probe->addr + CALL_WIDTH
-    emit_mov_int_rsp(&wrapper_end, probe->tag, neg_c2(8 * WORD_SZ));
+
+    //emit_mov_int_rsp(&wrapper_end, probe->tag, neg_c2(8 * WORD_SZ));
+
+    // Store the probe tag_data pointer on the pre-handler stack.
+    // The pointer is stored as a third 64bit entry on the stack after
+    // the return address. 16 bytes are left for the saved rbp, and the
+    // stack canary.
+    // If the compiler generates code that save the rbp and the stack canary,
+    // and lays out local variables on the stack in order, then tag_data
+    // pointer will be the first 8 bytes of the local variables.
+    // Writing the entry point for the handler in assembly is recommended.
+
+    emit_mov_imm64_r11(&wrapper_end, (u64) probe->tag_data);
+    emit_mov_r11_rsp(&wrapper_end, neg_c2(3 * WORD_SZ));
   }
   // replace old return address with address just after the jmp into the
   // pre-handler

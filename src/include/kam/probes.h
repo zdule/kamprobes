@@ -148,16 +148,16 @@ typedef struct kamprobe kamprobe;
 /* In the pre-handler, reserve stack (size in bytes) as follows:
  *                           Callee saved (max)  + tag
                                       |             |                       */
-#define RES_STACK_SZ   CALLEE_SAVE_NO * WORD_SZ  +  4
+#define RES_STACK_SZ   CALLEE_SAVE_NO * WORD_SZ  +  8
 
-#define KAM_PRE_ENTRY(tag_var)                                               \
+#define KAM_PRE_ENTRY(tag_data_var)                                          \
 volatile char __rscfl_reserved_stack[RES_STACK_SZ];                          \
 asm __volatile__("" :: "m" (__rscfl_reserved_stack)); /* prevent optim */    \
 {                                                                            \
   KAM_PRE_SAVE;  {                                                           \
   char *__rscfl_reserved_rbp = __builtin_frame_address(0);                   \
-  uint32_t *UNUSED(tag_var) = (uint32_t*)(__rscfl_reserved_rbp -             \
-                                  (CALLEE_SAVE_NO + 1) * WORD_SZ)            \
+  void **UNUSED(tag_data_var) = (void*)(__rscfl_reserved_rbp -               \
+                                  (2) * WORD_SZ)                             \
 
 
 #define PROBE_END             \

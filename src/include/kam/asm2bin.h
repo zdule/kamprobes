@@ -156,4 +156,15 @@ inline int is_noop(u8 *addr)
   return (*addr == 0x90 || *addr == 0x0f || *addr == 0x1f || *addr == 0x66);
 }
 
+inline void emit_mov_imm64_r11(char **wrapper_end, uint64_t imm) {
+  char machine_code[10] = {0x49, 0xbb, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+  int j;
+
+  for (j = 0; j < 8; j++) {
+    machine_code[2+j] = imm & 0xFF;
+    imm = imm >> 8;
+  }
+  emit_multiple_insn(wrapper_end, machine_code, sizeof(machine_code));
+}
+
 #endif
