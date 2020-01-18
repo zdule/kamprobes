@@ -166,15 +166,6 @@ int kamprobe_register(kamprobe* probe)
     // mov r11 wrapper_fp - 8
     emit_mov_r11_addr(&wrapper_end, wrapper_fp - WORD_SZ);
   } else {
-    // Store the probe tag inside a kamprobe-reserved region
-    // of the pre-handler stack (where the pre-handler stack will be)
-    // leave space for the worst case scenario of all callee-saved registers
-    // being saved (7 of them), start saving extra data at the 8th available
-    // position. We already know the return address as in the case of type
-    // 1 probes (caller), it's probe->addr + CALL_WIDTH
-
-    //emit_mov_int_rsp(&wrapper_end, probe->tag, neg_c2(8 * WORD_SZ));
-
     // Store the probe tag_data pointer on the pre-handler stack.
     // The pointer is stored as a third 64bit entry on the stack after
     // the return address. 16 bytes are left for the saved rbp, and the
@@ -275,12 +266,17 @@ int kamprobe_register(kamprobe* probe)
     }
   }
 
-  // As we have setup the stack so that [rsp] points to the address that the
-  // retq of the original function would have normally taken us to, we jump
-  // (rather than call) into post-handler. A call would not let us skip the
-  // wrapper on the return path from the post-handler as it would implicitly
-  // push the address just after the call onto the stack.
   if(probe->on_return != NULL) {
+    // Once again store the probe tag_data pointer on the stack, leaving room
+    // for the saved base pointer and the stack canary.
+    emit_mov_imm64_r11(&wrapper_end, (u64) probe->tag_data);
+    emit_mov_r11_rsp(&wrapper_end, neg_c2(3 * WORD_SZ));
+
+    // As we have setup the stack so that [rsp] points to the address that the
+    // retq of the original function would have normally taken us to, we jump
+    // (rather than call) into post-handler. A call would not let us skip the
+    // wrapper on the return path from the post-handler as it would implicitly
+    // push the address just after the call onto the stack.
     emit_jump(&wrapper_end, (char *)probe->on_return);
   }
 
