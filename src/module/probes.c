@@ -152,6 +152,13 @@ int kamprobe_register(kamprobe* probe)
   // wrapper_fp always points to the start of the current wrapper frame.
   wrapper_fp = wrapper_end;
 
+  // Find the target of the callq in the original instruction stream.
+  // We need this so that after calling the pre handler we can then call
+  // the original function.
+  offset = (addr[1]) + (addr[2] << 8) +
+           (addr[3] << 16) + (addr[4] << 24) + CALL_WIDTH;
+  target = (void *)addr + offset;
+
 
   // if we're in a type 2 probe (callee), then move the return address from the
   // stack to the reserved space in the wrapper, using r11 as an intermediate
@@ -177,17 +184,14 @@ int kamprobe_register(kamprobe* probe)
 
     emit_mov_imm64_r11(&wrapper_end, (u64) probe->tag_data);
     emit_mov_r11_rsp(&wrapper_end, neg_c2(3 * WORD_SZ));
+
+    // Save the target address to %r11 so that entry handlers can access it.
+    // Note that %r11 is already clobbered. 
+    emit_mov_imm64_r11(&wrapper_end, (u64) target);
   }
   // replace old return address with address just after the jmp into the
   // pre-handler
   emit_mov_addr_rsp(&wrapper_end, wrapper_end + MOV_NODISP_WIDTH + JMP_WIDTH, 0);
-
-  // Find the target of the callq in the original instruction stream.
-  // We need this so that after calling the pre handler we can then call
-  // the original function.
-  offset = (addr[1]) + (addr[2] << 8) +
-           (addr[3] << 16) + (addr[4] << 24) + CALL_WIDTH;
-  target = (void *)addr + offset;
 
   // jump into the pre-handler. we're simulating a call but without pushing
   // a new return address so that the pre-handler can access stack arguments
