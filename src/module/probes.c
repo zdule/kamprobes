@@ -173,21 +173,10 @@ int kamprobe_register(kamprobe* probe)
     // mov r11 wrapper_fp - 8
     emit_mov_r11_addr(&wrapper_end, wrapper_fp - WORD_SZ);
   } else {
-    // Store the probe tag_data pointer on the pre-handler stack.
-    // The pointer is stored as a third 64bit entry on the stack after
-    // the return address. 16 bytes are left for the saved rbp, and the
-    // stack canary.
-    // If the compiler generates code that save the rbp and the stack canary,
-    // and lays out local variables on the stack in order, then tag_data
-    // pointer will be the first 8 bytes of the local variables.
-    // Writing the entry point for the handler in assembly is recommended.
-
+    // Pass tag_data pointer through r11 register
+    // Never pass anything through the stack below rsp, because interrupt handlers
+    // will destroy this data.
     emit_mov_imm64_r11(&wrapper_end, (u64) probe->tag_data);
-    emit_mov_r11_rsp(&wrapper_end, neg_c2(3 * WORD_SZ));
-
-    // Save the target address to %r11 so that entry handlers can access it.
-    // Note that %r11 is already clobbered. 
-    emit_mov_imm64_r11(&wrapper_end, (u64) target);
   }
   // replace old return address with address just after the jmp into the
   // pre-handler
@@ -271,8 +260,7 @@ int kamprobe_register(kamprobe* probe)
   }
 
   if(probe->on_return != NULL) {
-    // Once again store the probe tag_data pointer on the stack, leaving room
-    // for the saved base pointer and the stack canary.
+    // Once again pass the probe tag_data pointer through r11
     emit_mov_imm64_r11(&wrapper_end, (u64) probe->tag_data);
     emit_mov_r11_rsp(&wrapper_end, neg_c2(3 * WORD_SZ));
 
