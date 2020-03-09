@@ -19,5 +19,5 @@
 #define JMP_WIDTH 5
 #define MOV_NODISP_WIDTH 8
 
-#define WRAPPER_SIZE 46
+#define WRAPPER_SIZE 63
 #endif
