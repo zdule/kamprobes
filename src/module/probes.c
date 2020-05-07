@@ -136,7 +136,7 @@ int kamprobe_register(kamprobe* probe)
     return -EINVAL;
   }
 
-  printk(KERN_ERR "wrapper_start:%p\n", wrapper_end);
+  //printk(KERN_ERR "wrapper_start:%p\n", wrapper_end);
   // If *addr is not a call instruction then we assume it is the start
   // of a sys_ function, called though other means. We don't want to rewrite
   // this code, so instead make use of the __fentry__ call placed at the
@@ -272,7 +272,7 @@ int kamprobe_register(kamprobe* probe)
     emit_jump(&wrapper_end, (char *)probe->on_return);
   }
 
-  printk(KERN_ERR "wrapper_end:%p\n", wrapper_end);
+  //printk(KERN_ERR "wrapper_end:%p\n", wrapper_end);
   // End of setting up the wrapper. Now change the text section to point to it.
 
   // Store the original address so that we can remove kamprobes.
